@@ -149,7 +149,7 @@ async def google_callback(
 
     # Issue our JWT and redirect to frontend
     jwt_token = create_access_token(data={"sub": str(user.id), "email": user.email})
-    frontend_url = "https://echomemory-frontend-161866545382.asia-south1.run.app"
+    frontend_url = settings.FRONTEND_URL
     params = urlencode(
         {
             "access_token": jwt_token,

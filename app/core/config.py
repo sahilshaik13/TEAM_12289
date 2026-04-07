@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
     GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/callback"
+    FRONTEND_URL: str = "http://localhost:3000"
 
     JWT_SECRET: str = ""
     JWT_ALGORITHM: str = "HS256"
