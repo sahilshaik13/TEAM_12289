@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { width: 320px; padding: 16px; font-family: system-ui, sans-serif; background: #f9fafb; }
+    .header { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+    .logo { width: 32px; height: 32px; background: #4F46E5; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px; }
+    .title { font-size: 16px; font-weight: 600; color: #111827; }
+    .status { display: flex; align-items: center; gap: 8px; padding: 12px; background: white; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 12px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; }
+    .status-dot.paused { background: #f59e0b; }
+    .status-text { font-size: 13px; color: #374151; flex: 1; }
+    .memory-count { font-size: 13px; color: #6b7280; margin-bottom: 16px; }
+    .btn { width: 100%; padding: 8px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; margin-bottom: 8px; }
+    .btn-secondary { background: white; border: 1px solid #d1d5db; color: #374151; }
+    .btn-primary { background: #4F46E5; color: white; }
+    .btn-primary:hover { background: #4338ca; }
+    .btn-danger { background: white; border: 1px solid #fca5a5; color: #dc2626; }
+    .divider { height: 1px; background: #e5e7eb; margin: 12px 0; }
+    .login-prompt { text-align: center; color: #6b7280; font-size: 13px; padding: 16px 0; }
+    .login-prompt a { color: #4F46E5; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">E</div>
+    <div class="title">EchoMemory</div>
+  </div>
+
+  <div class="status">
+    <div class="status-dot" id="statusDot"></div>
+    <div class="status-text" id="statusText">Capturing</div>
+  </div>
+
+  <div class="memory-count" id="memoryCount">Loading memories...</div>
+
+  <div id="authSection" style="display:none;">
+    <p class="login-prompt">Sign in to start capturing your memories.</p>
+    <button class="btn btn-primary" id="loginBtn">Sign in with Google</button>
+  </div>
+
+  <div id="mainSection">
+    <button class="btn btn-secondary" id="togglePauseBtn">Pause Capturing</button>
+    <button class="btn btn-secondary" id="openDashboardBtn">Open Dashboard</button>
+    <div class="divider"></div>
+    <button class="btn btn-danger" id="logoutBtn">Log out</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
