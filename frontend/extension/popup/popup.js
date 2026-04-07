@@ -1,72 +1,85 @@
 const API_URL = 'https://echomemory-api-161866545382.asia-south1.run.app/api/v1';
+const FRONTEND_URL = 'https://echomemory-frontend-161866545382.asia-south1.run.app';
 
 async function getAuthToken() {
-  const result = await chrome.storage.local.get(['auth_token', 'token_expiry']);
-  if (!result.auth_token || !result.token_expiry) return null;
-  if (Date.now() > result.token_expiry) return null;
-  return result.auth_token;
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ type: 'GET_TOKEN' }, (res) => {
+      resolve(res?.token || null);
+    });
+  });
 }
 
 async function loadPopupState() {
   const token = await getAuthToken();
-  const paused = await chrome.storage.local.get(['paused']);
-  const isPaused = paused.paused || false;
+  const result = await chrome.storage.local.get(['paused']);
+  const isPaused = result.paused || false;
+
+  const authSection = document.getElementById('authSection');
+  const mainSection = document.getElementById('mainSection');
+  const memCount = document.getElementById('memoryCount');
+  const dot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  const toggleBtn = document.getElementById('togglePauseBtn');
 
   if (!token) {
-    document.getElementById('authSection').style.display = 'block';
-    document.getElementById('mainSection').style.display = 'none';
-    document.getElementById('memoryCount').textContent = 'Not signed in';
+    authSection.style.display = 'block';
+    mainSection.style.display = 'none';
+    memCount.textContent = 'Not signed in';
     return;
   }
 
-  document.getElementById('authSection').style.display = 'none';
-  document.getElementById('mainSection').style.display = 'block';
+  authSection.style.display = 'none';
+  mainSection.style.display = 'block';
 
-  const dot = document.getElementById('statusDot');
-  const statusText = document.getElementById('statusText');
   dot.className = isPaused ? 'status-dot paused' : 'status-dot';
   statusText.textContent = isPaused ? 'Paused' : 'Capturing';
-
-  const btn = document.getElementById('togglePauseBtn');
-  btn.textContent = isPaused ? 'Resume Capturing' : 'Pause Capturing';
+  toggleBtn.textContent = isPaused ? 'Resume Capturing' : 'Pause Capturing';
 
   try {
     const res = await fetch(`${API_URL}/auth/me`, {
-      headers: { 'Authorization': `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
     if (res.ok) {
       const user = await res.json();
-      document.getElementById('memoryCount').textContent =
-        `${user.memory_count || 0} memories captured`;
+      memCount.textContent = `${user.memory_count || 0} memories captured`;
+    } else if (res.status === 401) {
+      // Token expired — go back to sign-in
+      await chrome.storage.local.remove(['auth_token', 'token_expiry']);
+      loadPopupState();
     } else {
-      document.getElementById('memoryCount').textContent = 'Error loading count';
+      memCount.textContent = 'Error loading count';
     }
   } catch {
-    document.getElementById('memoryCount').textContent = 'Offline';
+    memCount.textContent = 'Offline';
   }
 }
 
+// ─── Sign in ─────────────────────────────────────────────────────────────────
+// Opens the backend OAuth URL in a new tab. After Google auth, the backend
+// redirects to the frontend /auth/complete page, which sends AUTH_TOKEN
+// back to this extension via chrome.runtime.sendMessage.
+document.getElementById('loginBtn').addEventListener('click', () => {
+  chrome.tabs.create({ url: `${API_URL}/auth/google` });
+  window.close();
+});
+
+// ─── Pause / resume ───────────────────────────────────────────────────────────
 document.getElementById('togglePauseBtn').addEventListener('click', async () => {
   const result = await chrome.storage.local.get(['paused']);
-  const isPaused = result.paused || false;
-  const newPaused = !isPaused;
-  await chrome.storage.local.set({ paused: newPaused });
+  const newPaused = !result.paused;
   chrome.runtime.sendMessage({ type: 'SET_PAUSED', paused: newPaused });
   loadPopupState();
 });
 
+// ─── Dashboard ────────────────────────────────────────────────────────────────
 document.getElementById('openDashboardBtn').addEventListener('click', () => {
-  chrome.tabs.create({ url: 'http://localhost:3000' });
+  chrome.tabs.create({ url: `${FRONTEND_URL}/dashboard` });
 });
 
+// ─── Logout ───────────────────────────────────────────────────────────────────
 document.getElementById('logoutBtn').addEventListener('click', async () => {
-  await chrome.storage.local.remove(['auth_token', 'token_expiry']);
-  chrome.runtime.sendMessage({ type: 'SET_PAUSED', paused: false });
+  chrome.runtime.sendMessage({ type: 'LOGOUT' });
   loadPopupState();
-});
-
-document.getElementById('loginBtn').addEventListener('click', () => {
-  chrome.tabs.create({ url: `${API_URL}/auth/google` });
 });
 
 loadPopupState();
