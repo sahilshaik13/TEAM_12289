@@ -1,0 +1,32 @@
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "--build-arg"
+      - "NEXT_PUBLIC_API_URL=https://echomemory-api-161866545382.asia-south1.run.app"
+      - "--build-arg"
+      - "NEXT_PUBLIC_EXTENSION_ID=${_EXTENSION_ID}"
+      - "-t"
+      - "asia-south1-docker.pkg.dev/sap-capstone-492614/echomemory/echomemory-frontend:latest"
+      - "."
+
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "push"
+      - "asia-south1-docker.pkg.dev/sap-capstone-492614/echomemory/echomemory-frontend:latest"
+
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    args:
+      - "run"
+      - "deploy"
+      - "echomemory-frontend"
+      - "--image=asia-south1-docker.pkg.dev/sap-capstone-492614/echomemory/echomemory-frontend:latest"
+      - "--region=asia-south1"
+      - "--platform=managed"
+      - "--allow-unauthenticated"
+
+images:
+  - "asia-south1-docker.pkg.dev/sap-capstone-492614/echomemory/echomemory-frontend:latest"
+
+substitutions:
+  _EXTENSION_ID: ""
