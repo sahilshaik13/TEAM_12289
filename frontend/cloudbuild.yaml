@@ -16,6 +16,7 @@ steps:
       - "asia-south1-docker.pkg.dev/sap-capstone-492614/echomemory/echomemory-frontend:latest"
 
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
     args:
       - "run"
       - "deploy"
