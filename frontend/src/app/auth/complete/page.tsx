@@ -1,15 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
-// Extension ID — update if you use a different build.
-// In production you'd read this from an env var or a well-known endpoint.
-// The manifest's externally_connectable allows this page to message the extension.
 const EXTENSION_ID = process.env.NEXT_PUBLIC_EXTENSION_ID || "";
 
-export default function AuthCompletePage() {
+function AuthCompleteInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<"loading" | "done" | "error">("loading");
@@ -26,36 +23,28 @@ export default function AuthCompletePage() {
       return;
     }
 
-    // 1️⃣  Always write to localStorage for the web app
+    // 1️⃣ Write to localStorage for the web app
     localStorage.setItem("echomemory_token", token);
     localStorage.setItem(
       "echomemory_user",
       JSON.stringify({ userId, email, displayName })
     );
 
-    // 2️⃣  If the page was opened by the Chrome extension, send the token back
-    //     The extension background.js listens for { type: 'AUTH_TOKEN', token }
-    const sendToExtension = () => {
-      // chrome.runtime is injected by Chrome when externally_connectable matches
+    // 2️⃣ Send token to Chrome extension (if this page was opened by it)
+    try {
       const runtime = (window as any).chrome?.runtime;
-      if (!runtime) return false;
-
-      const targetId = EXTENSION_ID || undefined; // undefined = any connected extension
-      try {
-        runtime.sendMessage(targetId, { type: "AUTH_TOKEN", token }, () => {
-          // Ignore chrome.runtime.lastError — extension may not be installed
-          void runtime.lastError;
-        });
-        return true;
-      } catch {
-        return false;
+      if (runtime) {
+        runtime.sendMessage(
+          EXTENSION_ID || undefined,
+          { type: "AUTH_TOKEN", token },
+          () => { void runtime.lastError; }
+        );
       }
-    };
+    } catch {
+      // Extension not installed — that's fine
+    }
 
-    sendToExtension();
     setStatus("done");
-
-    // 3️⃣  Redirect to dashboard after a short delay (gives time for extension to receive msg)
     setTimeout(() => router.replace("/dashboard"), 800);
   }, [router, searchParams]);
 
@@ -80,5 +69,21 @@ export default function AuthCompletePage() {
         </>
       )}
     </div>
+  );
+}
+
+// useSearchParams() requires Suspense in Next.js 14 app router
+export default function AuthCompletePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-white gap-4">
+          <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+          <p className="text-gray-500 text-sm">Loading…</p>
+        </div>
+      }
+    >
+      <AuthCompleteInner />
+    </Suspense>
   );
 }
