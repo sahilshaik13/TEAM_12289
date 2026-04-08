@@ -26,11 +26,14 @@ def _clean_url(raw: str) -> str:
     return f"{parsed.scheme}://{netloc}{path}?{clean_query}" if clean_query else f"{parsed.scheme}://{netloc}{path}"
 
 
-raw_url = os.environ.get(
-    "DATABASE_URL",
-    "postgresql+asyncpg://USER:PASSWORD@HOST/DATABASE?sslmode=require"
-)
+raw_url = os.environ.get("DATABASE_URL")
+if not raw_url:
+    raise RuntimeError(
+        "DATABASE_URL environment variable is not set. "
+        "Copy .env.example to .env and fill in your database credentials."
+    )
 clean_url = _clean_url(raw_url)
+
 
 config = context.config
 if config.config_file_name is not None:
